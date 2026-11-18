@@ -37,8 +37,13 @@ if [[ -z "$TMUX" && -z "$EMACS" && -z "$VIM" && -z "$INSIDE_EMACS" && -z "$VSCOD
       set-option -t "$tmux_session" destroy-unattached off &> /dev/null
   fi
 
-  # Attach to the 'prezto' session or to the last session used. (detach first)
-  exec tmux $_tmux_iterm_integration attach-session -d
+  # Attach to the first unattached session
+  attach_session=$(tmux 2> /dev/null ls -F \
+    '#{session_attached} #{?#{==:#{session_last_attached},},1,#{session_last_attached}} #{session_id}' |
+    awk '/^0/ { if ($2 > t) { t = $2; s = $3 } }; END { if (s) printf "%s", s }')
+  if [ -n "$attach_session" ]; then
+    tmux $_tmux_iterm_integration attach-session -d -t "$attach_session"
+  fi
 fi
 
 #
